@@ -1,0 +1,6 @@
+.idea
+cmake-build-debug
+workspace.xml
+ImageStacker.iml
+misc.xml
+modules.xml
