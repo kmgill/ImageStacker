@@ -14,8 +14,7 @@ public:
     Stacker(int width, int height);
     ~Stacker();
 
-    void add(Image<color_f> * image);
-    void add(Image<color> * image);
+    void add(Image * image);
 
     void finalize();
 

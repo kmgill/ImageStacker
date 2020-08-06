@@ -12,7 +12,7 @@ namespace po = boost::program_options;
 
 void process_input(const char * source, Stacker * stacker, float threshold) {
     std::cout << "Processing " << source << std::endl;
-    Image<color_f> * image = Image<color_f>::openFloat(source);
+    Image * image = Image::open(source);
     Offset * offset = image->calculateSimpleCenterOffset(10);
 
     std::cout << "Offset X: " << offset->horiz << ", Y: " << offset->vert << std::endl;

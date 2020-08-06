@@ -27,7 +27,9 @@ Stacker::~Stacker() {
 
 
 
-void Stacker::add(Image<color_f> * image) {
+void Stacker::add(Image * image) {
+
+    // TODO: This is bad. Should overlay regardless of size.
     if ((!(this->buffer->width == image->width())) || (!(this->buffer->height == image->height()))) {
         return; // Raise!
     }
@@ -45,24 +47,6 @@ void Stacker::add(Image<color_f> * image) {
 }
 
 
-void Stacker::add(Image<color> * image) {
-    if ((!(this->buffer->width == image->width())) || (!(this->buffer->height == image->height()))) {
-        return; // Raise!
-    }
-
-    for (int x = 0; x < this->buffer->width; x++) {
-        for (int y = 0; y < this->buffer->height; y++) {
-            RGBf * thisBufferRGB = get_image_buffer_pixel<color_f>(this->buffer, x, y);
-            RGB * addingBufferRGB = image->getPixel(x, y);
-            thisBufferRGB->red += (color_f) addingBufferRGB->red;
-            thisBufferRGB->green += (color_f) addingBufferRGB->green;
-            thisBufferRGB->blue += (color_f) addingBufferRGB->blue;
-            this->count[y * this->buffer->width + x]++;
-        }
-    }
-}
-
-
 void Stacker::finalize() {
     for (int x = 0; x < this->buffer->width; x++) {
         for (int y = 0; y < this->buffer->height; y++) {
@@ -73,7 +57,6 @@ void Stacker::finalize() {
                 thisBufferRGB->red /= pixelCount;
                 thisBufferRGB->green /= pixelCount;
                 thisBufferRGB->blue /= pixelCount;
-                //std::cout << (float) thisBufferRGB->red << ", " << pixelCount << std::endl;
                 this->count[y * this->buffer->width + x] = 0;
             }
         }
