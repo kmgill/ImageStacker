@@ -43,15 +43,72 @@ void destroy_image_buffer(struct _ImageBuffer<T> * image_buffer) {
     free(image_buffer);
 }
 
+
+
+template<typename T>
+int get_image_buffer_pixel(struct _ImageBuffer<T> * image, int x, int y, struct _RGB<T> * rgb) {
+    if (image == NULL) {
+        return 0;
+    }
+
+    if (image->buffer == NULL) {
+        return 0;
+    }
+
+    if (x < 0 || x >= image->width) {
+        return 0;
+    }
+
+    if (y < 0 || y >= image->height) {
+        return 0;
+    }
+
+    struct _RGB<T> * _rgb = & image->buffer[image->width * y + x];
+    rgb->red = _rgb->red;
+    rgb->green = _rgb->green;
+    rgb->blue = _rgb->blue;
+
+    return 1;
+}
+
+template<typename T>
+int set_image_buffer_pixel(struct _ImageBuffer<T> * image, int x, int y, struct _RGB<T> * rgb) {
+    if (image == NULL) {
+        return 0;
+    }
+
+    if (image->buffer == NULL) {
+        return 0;
+    }
+
+    if (x < 0 || x >= image->width) {
+        return 0;
+    }
+
+    if (y < 0 || y >= image->height) {
+        return 0;
+    }
+
+    struct _RGB<T> * _rgb = & image->buffer[image->width * y + x];
+    _rgb->red = rgb->red;
+    _rgb->green = rgb->green;
+    _rgb->blue = rgb->blue;
+
+    return 1;
+}
+
+
 /**
  * Fills an _ImageBuffer with zeros.
  */
 template<typename T>
 void zero_image_buffer(struct _ImageBuffer<T> * image_buffer) {
+    struct _RGB<T> rgb;
+    rgb.red = rgb.green = rgb.blue = 0;
+
     for (int x = 0; x < image_buffer->width; x++) {
         for (int y = 0; y < image_buffer->height; y++) {
-            struct _RGB<T> * rgb = get_image_buffer_pixel(image_buffer, x, y);
-            rgb->red = rgb->green = rgb->blue = 0x0;
+            set_image_buffer_pixel<T>(image_buffer, x, y, &rgb);
         }
     }
 }
@@ -79,14 +136,17 @@ T scale_pixel_value(T pixel_value, T from_min, T from_max, T to_min, T to_max) {
  */
 template<typename T>
 void scale_image_buffer(struct _ImageBuffer<T> * image_buffer, float from_min, float from_max, float to_min, float to_max) {
-  for (int x = 0; x < image_buffer->width; x++) {
-      for (int y = 0; y < image_buffer->height; y++) {
-          struct _RGB<T> * rgb = get_image_buffer_pixel(image_buffer, x, y);
-          rgb->red = scale_pixel_value<T>(rgb->red, from_min, from_max, to_min, to_max);
-          rgb->green = scale_pixel_value<T>(rgb->green, from_min, from_max, to_min, to_max);
-          rgb->blue = scale_pixel_value<T>(rgb->blue, from_min, from_max, to_min, to_max);
-      }
-  }
+    struct _RGB<T> rgb;
+    for (int x = 0; x < image_buffer->width; x++) {
+        for (int y = 0; y < image_buffer->height; y++) {
+            if (get_image_buffer_pixel<T>(image_buffer, x, y, &rgb) == 1) {
+                rgb.red = scale_pixel_value<T>(rgb.red, from_min, from_max, to_min, to_max);
+                rgb.green = scale_pixel_value<T>(rgb.green, from_min, from_max, to_min, to_max);
+                rgb.blue = scale_pixel_value<T>(rgb.blue, from_min, from_max, to_min, to_max);
+                set_image_buffer_pixel<T>(image_buffer, x, y, &rgb);
+            }
+        }
+    }
 }
 
 /**
@@ -97,28 +157,6 @@ void normalize_image_buffer(struct _ImageBuffer<T> * image_buffer, float from_mi
     scale_image_buffer<T>(image_buffer, from_min, from_max, 0.0, 1.0);
 }
 
-
-template<typename T>
-struct _RGB<T> * get_image_buffer_pixel(struct _ImageBuffer<T> * image, int x, int y) {
-    if (image == NULL) {
-        return NULL;
-    }
-
-    if (image->buffer == NULL) {
-        return NULL;
-    }
-
-    if (x < 0 || x >= image->width) {
-        return NULL;
-    }
-
-    if (y < 0 || y >= image->height) {
-        return NULL;
-    }
-
-    struct _RGB<T> * rgb = & image->buffer[image->width * y + x];
-    return rgb;
-}
 
 /*
  * This is slow....
@@ -151,11 +189,12 @@ template<typename T>
 void print_image_buffer_stats(_ImageBuffer<T> * buffer) { // For debugging. Delete at some point.
     float min = 99999;
     float max = 0;
+    RGBf rgb;
     for (int x = 0; x < buffer->width; x++) {
         for (int y = 0; y < buffer->height; y++) {
-            RGBf * rgb = get_image_buffer_pixel<T>(buffer, x, y);
-            min = (rgb->red < min) ? rgb->red : min;
-            max = (rgb->red > max) ? rgb->red : max;
+            get_image_buffer_pixel<T>(buffer, x, y, &rgb);
+            min = (rgb.red < min) ? rgb.red : min;
+            max = (rgb.red > max) ? rgb.red : max;
         }
     }
     std::cout << "Min: " << min << ", Max: " << max << std::endl;

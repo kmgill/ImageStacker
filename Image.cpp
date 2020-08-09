@@ -34,8 +34,12 @@ int Image::height() {
     return this->buffer->height;
 }
 
-RGBf * Image::getPixel(int x, int y) {
-    return get_image_buffer_pixel<color_f>(this->buffer, x, y);
+int Image::getPixel(int x, int y, RGBf * rgb) {
+    return get_image_buffer_pixel<color_f>(this->buffer, x, y, rgb);
+}
+
+int Image::setPixel(int x, int y, RGBf * rgb) {
+    return set_image_buffer_pixel<color_f>(this->buffer, x, y, rgb);
 }
 
 int Image::rgb2Gray(RGBf * rgb) {
@@ -54,16 +58,18 @@ Offset * Image::calculateSimpleCenterOffset(float threshold) {
     float Oy = 0.0;
     int count = 0;
     Offset * offset = allocate_offset();
+    RGBf rgb;
 
     for (int x = 0; x < this->buffer->width; x++) {
         for (int y = 0; y < this->buffer->height; y++) {
-            RGBf * rgb = getPixel(x, y);
-            float gray = (float) rgb2Gray(rgb);
+            if (NOTZERO(getPixel(x, y, &rgb))) {
+                float gray = (float) rgb2Gray(&rgb);
 
-            if (gray >= threshold) {
-                Ox += x;
-                Oy += y;
-                count++;
+                if (gray >= threshold) {
+                    Ox += x;
+                    Oy += y;
+                    count++;
+                }
             }
         }
     }
@@ -99,15 +105,20 @@ void Image::getInterpolatedPixelValue(float Ox, float Oy, RGBf * rgb_f) {
     float x = Ox - floor(Ox);
     float y = Oy - floor(Oy);
 
-    RGBf * v00 = getPixel(Oxf, Oyf);
-    RGBf * v01 = getPixel(Oxc, Oyf);
-    RGBf * v10 = getPixel(Oxf, Oyc);
-    RGBf * v11 = getPixel(Oxc, Oyc);
+    RGBf v00;
+    RGBf v01;
+    RGBf v10;
+    RGBf v11;
 
-    if (NOTNULL(v00) && NOTNULL(v01) && NOTNULL(v10) && NOTNULL(v11)) {
-        rgb_f->red = getInterpolatedChannelValue(v00->red, v01->red, v10->red, v11->red, x, y);
-        rgb_f->green = getInterpolatedChannelValue(v00->green, v01->green, v10->green, v11->green, x, y);
-        rgb_f->blue = getInterpolatedChannelValue(v00->blue, v01->blue, v10->blue, v11->blue, x, y);
+    int a = getPixel(Oxf, Oyf, &v00);
+    int b = getPixel(Oxc, Oyf, &v01);
+    int c = getPixel(Oxf, Oyc, &v10);
+    int d = getPixel(Oxc, Oyc, &v11);
+
+    if (NOTZERO(a) && NOTZERO(b) && NOTZERO(c) && NOTZERO(d)) {
+        rgb_f->red = getInterpolatedChannelValue(v00.red, v01.red, v10.red, v11.red, x, y);
+        rgb_f->green = getInterpolatedChannelValue(v00.green, v01.green, v10.green, v11.green, x, y);
+        rgb_f->blue = getInterpolatedChannelValue(v00.blue, v01.blue, v10.blue, v11.blue, x, y);
     }
 }
 
@@ -120,17 +131,18 @@ void Image::shiftImageCenter(float threshold) {
 void Image::shiftImageCenter(Offset * offset) {
     _ImageBuffer<color_f> * tmp_image = allocate_image_buffer<color_f>(this->buffer->width, this->buffer->height);
     RGBf rgbf;
-
+    RGBf tmp_rgb;
     for (int x = 0; x < this->buffer->width; x++) {
         for (int y = 0; y < this->buffer->height; y++) {
             float Ox = (float)x - offset->horiz;
             float Oy = (float)y - offset->vert;
             if (_BETWEEN(Ox, 0.0, (float)this->buffer->width - 1) && _BETWEEN(Oy, 0.0, (float)this->buffer->height - 1)) {
                 getInterpolatedPixelValue(Ox, Oy, &rgbf);
-                RGBf * tmp_rgb = get_image_buffer_pixel<color_f>(tmp_image, x, y);
-                tmp_rgb->red = rgbf.red;
-                tmp_rgb->green = rgbf.green;
-                tmp_rgb->blue = rgbf.blue;
+                get_image_buffer_pixel<color_f>(tmp_image, x, y, & tmp_rgb);
+                tmp_rgb.red = rgbf.red;
+                tmp_rgb.green = rgbf.green;
+                tmp_rgb.blue = rgbf.blue;
+                set_image_buffer_pixel<color_f>(tmp_image, x, y, & tmp_rgb);
             }
         }
     }

@@ -2,6 +2,9 @@
 #ifndef IMAGESTACKER_COMMON_H
 #define IMAGESTACKER_COMMON_H
 
+#ifndef NULL
+#define NULL 0x0
+#endif
 
 #ifndef _BETWEEN
 #define _BETWEEN(t, a, b) (t >= a && t <= b)
@@ -11,8 +14,8 @@
 #define NOTNULL(x) (x != NULL)
 #endif
 
-#ifndef NULL
-#define NULL 0x0
+#ifndef NOTZERO
+#define NOTZERO(x) (x != 0)
 #endif
 
 

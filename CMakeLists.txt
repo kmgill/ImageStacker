@@ -11,6 +11,6 @@ find_package(PNG REQUIRED)
 
 include_directories("."  ${JPEG_INCLUDE_DIR} ${PNG_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
-add_executable(ImageStacker main.cpp jpeg.cpp jpeg.h ImageBuffer.cpp ImageBuffer.h Image.cpp Image.h common.h Offset.cpp Offset.h Stacker.cpp Stacker.h)
+add_executable(ImageStacker main.cpp jpeg.cpp ImageBuffer.cpp Image.cpp Offset.cpp Stacker.cpp pngrw.cpp)
 
 target_link_libraries(ImageStacker ${JPEG_LIBRARIES} ${PNG_LIBRARIES} ${Boost_LIBRARIES})

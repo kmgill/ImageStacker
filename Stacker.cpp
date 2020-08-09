@@ -36,14 +36,20 @@ void Stacker::add(Image * image) {
         return; // Raise!
     }
 
+    RGBf thisBufferRGB;
+    RGBf addingBufferRGB;
+
     for (int x = 0; x < this->buffer->width; x++) {
         for (int y = 0; y < this->buffer->height; y++) {
-            RGBf * thisBufferRGB = get_image_buffer_pixel<color_f>(this->buffer, x, y);
-            RGBf * addingBufferRGB = image->getPixel(x, y);
-            thisBufferRGB->red += addingBufferRGB->red;
-            thisBufferRGB->green += addingBufferRGB->green;
-            thisBufferRGB->blue += addingBufferRGB->blue;
-            this->count[y * this->buffer->width + x]++;
+            int a = get_image_buffer_pixel<color_f>(this->buffer, x, y, &thisBufferRGB);
+            int b = image->getPixel(x, y, &addingBufferRGB);
+            if (NOTZERO(a) && NOTZERO(b)) {
+                thisBufferRGB.red += addingBufferRGB.red;
+                thisBufferRGB.green += addingBufferRGB.green;
+                thisBufferRGB.blue += addingBufferRGB.blue;
+                set_image_buffer_pixel<color_f>(this->buffer, x, y, &thisBufferRGB);
+                this->count[y * this->buffer->width + x]++;
+            }
         }
     }
 }
@@ -52,19 +58,21 @@ void Stacker::add(Image * image) {
  * Finalizes the averaging computation
  */
 void Stacker::finalize() {
+    RGBf thisBufferRGB;
+
     for (int x = 0; x < this->buffer->width; x++) {
         for (int y = 0; y < this->buffer->height; y++) {
             float pixelCount = (float) this->count[y * this->buffer->width + x];
 
             if (pixelCount > 0.0) {
-                RGBf * thisBufferRGB = get_image_buffer_pixel<color_f>(this->buffer, x, y);
-
-                thisBufferRGB->red /= pixelCount;
-                thisBufferRGB->green /= pixelCount;
-                thisBufferRGB->blue /= pixelCount;
-                this->count[y * this->buffer->width + x] = 0;
+                if (NOTZERO(get_image_buffer_pixel<color_f>(this->buffer, x, y, &thisBufferRGB))) {
+                    thisBufferRGB.red /= pixelCount;
+                    thisBufferRGB.green /= pixelCount;
+                    thisBufferRGB.blue /= pixelCount;
+                    this->count[y * this->buffer->width + x] = 0;
+                    set_image_buffer_pixel<color_f>(this->buffer, x, y, &thisBufferRGB);
+                }
             }
-
         }
     }
 }

@@ -16,7 +16,7 @@ class Image {
 private:
     _ImageBuffer<color_f> * buffer;
 protected:
-    
+
 public:
     Image(_ImageBuffer<color_f> * _buffer);
     Image(int width, int height);
@@ -26,8 +26,9 @@ public:
     int width();
     int height();
 
-    RGBf * getPixel(int x, int y);
-
+    int getPixel(int x, int y, RGBf * rgb);
+    int setPixel(int x, int y, RGBf * rgb);
+    
     static int rgb2Gray(RGBf * rgb);
 
     Offset * calculateSimpleCenterOffset(float threshold);
