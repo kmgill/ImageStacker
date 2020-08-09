@@ -16,6 +16,7 @@ class Image {
 private:
     _ImageBuffer<color_f> * buffer;
 protected:
+    
 public:
     Image(_ImageBuffer<color_f> * _buffer);
     Image(int width, int height);
@@ -31,7 +32,7 @@ public:
 
     Offset * calculateSimpleCenterOffset(float threshold);
 
-    static color_f getInterpolatedChannelValue(color c00, color c01, color c10, color c11, float x, float y);
+    static color_f getInterpolatedChannelValue(color_f c00, color_f c01, color_f c10, color_f c11, float x, float y);
 
     void getInterpolatedPixelValue(float Ox, float Oy, RGBf * rgb_f);
 

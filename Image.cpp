@@ -5,6 +5,7 @@
 #include "jpeg.h"
 #include <math.h>
 #include <string.h>
+#include <iostream>
 
 
 Image::Image(_ImageBuffer<color_f> * _buffer)
@@ -59,7 +60,7 @@ Offset * Image::calculateSimpleCenterOffset(float threshold) {
             RGBf * rgb = getPixel(x, y);
             float gray = (float) rgb2Gray(rgb);
 
-            if (gray > threshold) {
+            if (gray >= threshold) {
                 Ox += x;
                 Oy += y;
                 count++;
@@ -78,7 +79,7 @@ Offset * Image::calculateSimpleCenterOffset(float threshold) {
     return offset;
 }
 
-color_f Image::getInterpolatedChannelValue(color c00, color c01, color c10, color c11, float x, float y) {
+color_f Image::getInterpolatedChannelValue(color_f c00, color_f c01, color_f c10, color_f c11, float x, float y) {
     color_f v00 = (color_f) c00;
     color_f v01 = (color_f) c01;
     color_f v10 = (color_f) c10;
@@ -122,14 +123,14 @@ void Image::shiftImageCenter(Offset * offset) {
 
     for (int x = 0; x < this->buffer->width; x++) {
         for (int y = 0; y < this->buffer->height; y++) {
-            float Ox = x - offset->horiz;
-            float Oy = y - offset->vert;
+            float Ox = (float)x - offset->horiz;
+            float Oy = (float)y - offset->vert;
             if (_BETWEEN(Ox, 0.0, (float)this->buffer->width - 1) && _BETWEEN(Oy, 0.0, (float)this->buffer->height - 1)) {
                 getInterpolatedPixelValue(Ox, Oy, &rgbf);
-                RGBf * tmp_rgb = get_image_buffer_pixel(tmp_image, x, y);
-                tmp_rgb->red = round(rgbf.red);
-                tmp_rgb->green = round(rgbf.green);
-                tmp_rgb->blue = round(rgbf.blue);
+                RGBf * tmp_rgb = get_image_buffer_pixel<color_f>(tmp_image, x, y);
+                tmp_rgb->red = rgbf.red;
+                tmp_rgb->green = rgbf.green;
+                tmp_rgb->blue = rgbf.blue;
             }
         }
     }
@@ -142,19 +143,27 @@ void Image::shiftImageCenter(Offset * offset) {
 
 void Image::save(const char * path, int quality) {
     //NEEDS TO CONVERT TO UINT8: write_JPEG_file(this->buffer, path, quality);
+    _ImageBuffer<color_f> * scale_buffer = allocate_image_buffer<color_f>(this->buffer->width, this->buffer->height);
+    copy_image_buffer<color_f, color_f>(this->buffer, scale_buffer);
+    scale_image_buffer<color_f>(scale_buffer, 0.0, 1.0, 0.0, 255.0);
 
     _ImageBuffer<color> * save_buffer = allocate_image_buffer<color>(this->buffer->width, this->buffer->height);
-    copy_image_buffer<color_f, color>(this->buffer, save_buffer);
+    copy_image_buffer<color_f, color>(scale_buffer, save_buffer);
     write_JPEG_file(save_buffer, path, quality);
 
+    destroy_image_buffer(scale_buffer);
     destroy_image_buffer(save_buffer);
 }
 
 Image * Image::open(const char * path) {
+    // Some of this will move once I add png/etc support
     _ImageBuffer<color> * image_buffer = read_JPEG_file(path);
     _ImageBuffer<color_f> * image_buffer_t = allocate_image_buffer<color_f>(image_buffer->width, image_buffer->height);
     copy_image_buffer<color, color_f>(image_buffer, image_buffer_t);
-    destroy_image_buffer(image_buffer);
+    destroy_image_buffer<color>(image_buffer);
+    normalize_image_buffer<color_f>(image_buffer_t, 0.0, 255.0);
+
     Image * result = new Image(image_buffer_t);
+
     return result;
 }

@@ -13,7 +13,7 @@ namespace po = boost::program_options;
 void process_input(const char * source, Stacker * stacker, float threshold) {
     std::cout << "Processing " << source << std::endl;
     Image * image = Image::open(source);
-    Offset * offset = image->calculateSimpleCenterOffset(10);
+    Offset * offset = image->calculateSimpleCenterOffset(threshold);
 
     std::cout << "Offset X: " << offset->horiz << ", Y: " << offset->vert << std::endl;
 
@@ -32,7 +32,7 @@ int main(int argc, const char *argv[]) {
             ("help,h", "Help screen")
             ("input,i", po::value<std::vector<std::string>>()->multitoken()->composing())
             ("output,o", po::value<std::string>())
-            ("threshold,t", po::value<float>()->default_value(10.0))
+            ("threshold,t", po::value<float>()->default_value(0.1))
             ;
 
     po::variables_map vm;

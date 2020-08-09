@@ -26,7 +26,9 @@ Stacker::~Stacker() {
 }
 
 
-
+/**
+ * Adds an image to the stack
+ */
 void Stacker::add(Image * image) {
 
     // TODO: This is bad. Should overlay regardless of size.
@@ -46,11 +48,14 @@ void Stacker::add(Image * image) {
     }
 }
 
-
+/**
+ * Finalizes the averaging computation
+ */
 void Stacker::finalize() {
     for (int x = 0; x < this->buffer->width; x++) {
         for (int y = 0; y < this->buffer->height; y++) {
             float pixelCount = (float) this->count[y * this->buffer->width + x];
+
             if (pixelCount > 0.0) {
                 RGBf * thisBufferRGB = get_image_buffer_pixel<color_f>(this->buffer, x, y);
 
@@ -59,16 +64,24 @@ void Stacker::finalize() {
                 thisBufferRGB->blue /= pixelCount;
                 this->count[y * this->buffer->width + x] = 0;
             }
+
         }
     }
 }
 
+/**
+ * Exports the image.
+ */
 void Stacker::save(const char * path, int quality) {
     //NEEDS TO CONVERT TO UINT8: write_JPEG_file(this->buffer, path, quality);
+    _ImageBuffer<color_f> * scale_buffer = allocate_image_buffer<color_f>(this->buffer->width, this->buffer->height);
+    copy_image_buffer<color_f, color_f>(this->buffer, scale_buffer);
+    scale_image_buffer<color_f>(scale_buffer, 0.0, 1.0, 0.0, 255.0);
 
     _ImageBuffer<color> * save_buffer = allocate_image_buffer<color>(this->buffer->width, this->buffer->height);
-    copy_image_buffer<color_f, color>(this->buffer, save_buffer);
+    copy_image_buffer<color_f, color>(scale_buffer, save_buffer, true);
     write_JPEG_file(save_buffer, path, quality);
 
+    destroy_image_buffer(scale_buffer);
     destroy_image_buffer(save_buffer);
 }
